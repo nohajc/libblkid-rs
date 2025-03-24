@@ -1,6 +1,23 @@
 use bindgen::Builder;
 
-use std::{env, path::PathBuf};
+use std::{
+    env,
+    path::{Path, PathBuf},
+};
+
+#[cfg(target_os = "macos")]
+fn fix_include(include: &PathBuf) -> &Path {
+    if include.ends_with("include/blkid") {
+        include.parent().unwrap()
+    } else {
+        include
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
+fn fix_include(include: &PathBuf) -> &Path {
+    include
+}
 
 fn main() {
     let mut pkg_config = pkg_config::Config::new();
@@ -16,6 +33,7 @@ fn main() {
             libblkid
                 .include_paths
                 .iter()
+                .map(fix_include)
                 .map(|include| format!("-I{}", include.display())),
         )
         .header("header.h")
